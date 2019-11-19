@@ -13,17 +13,20 @@
 
 
 from captureAgents import CaptureAgent
+from capture import GameState as cpt
 import random, time, util
 from game import Directions
 import game
+from util import nearestPoint
+
 
 #################
 # Team creation #
 #################
 
 def createTeam(firstIndex, secondIndex, isRed,
-               first = 'DummyAgent', second = 'DummyAgent'):
-  """
+               first='DummyAgent', second='DummyAgent'):
+    """
   This function should return a list of two agents that will form the
   team, initialized using firstIndex and secondIndex as their agent
   index numbers.  isRed is True if the red team is being created, and
@@ -38,22 +41,23 @@ def createTeam(firstIndex, secondIndex, isRed,
   behavior is what you want for the nightly contest.
   """
 
-  # The following line is an example only; feel free to change it.
-  return [eval(first)(firstIndex), eval(second)(secondIndex)]
+    # The following line is an example only; feel free to change it.
+    return [eval(first)(firstIndex), eval(second)(secondIndex)]
+
 
 ##########
 # Agents #
 ##########
 
 class DummyAgent(CaptureAgent):
-  """
+    """
   A Dummy agent to serve as an example of the necessary agent structure.
   You should look at baselineTeam.py for more details about how to
   create an agent as this is the bare minimum.
   """
 
-  def registerInitialState(self, gameState):
-    """
+    def registerInitialState(self, gameState):
+        """
     This method handles the initial setup of the
     agent to populate useful fields (such as what team
     we're on).
@@ -65,28 +69,47 @@ class DummyAgent(CaptureAgent):
     IMPORTANT: This method may run for at most 15 seconds.
     """
 
-    '''
+        '''
     Make sure you do not delete the following line. If you would like to
     use Manhattan distances instead of maze distances in order to save
     on initialization time, please take a look at
     CaptureAgent.registerInitialState in captureAgents.py.
     '''
-    CaptureAgent.registerInitialState(self, gameState)
+        CaptureAgent.registerInitialState(self, gameState)
 
-    '''
+        '''
     Your initialization code goes here, if you need any.
     '''
 
-
-  def chooseAction(self, gameState):
-    """
+    def chooseAction(self, gameState):
+        """
     Picks among actions randomly.
     """
-    actions = gameState.getLegalActions(self.index)
+        actions = gameState.getLegalActions(self.index)
+        best_action = actions[0]
+        best_score = -9999999999999
+        for action in actions:
+            clone = self.getSuccessor(gameState, action)
+            score = self.min_play(clone)
+            if (score > best_score):
+              best_action = action
+              best_score = score
+        return best_action
 
-    '''
-    You should change this in your own agent.
-    '''
+    def min_play(self, gameState):
+      
+      actions = gameState.getLegalActions(self.index)
 
-    return random.choice(actions)
 
+
+    def getSuccessor(self, gameState, action):
+        """
+    Finds the next successor which is a grid position (location tuple).
+    """
+        successor = gameState.generateSuccessor(self.index, action)
+        pos = successor.getAgentState(self.index).getPosition()
+        if pos != nearestPoint(pos):
+            # Only half a grid position was covered
+            return successor.generateSuccessor(self.index, action)
+        else:
+            return successor
