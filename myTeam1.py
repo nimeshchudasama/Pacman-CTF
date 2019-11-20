@@ -4,7 +4,7 @@
 # educational purposes provided that (1) you do not distribute or publish
 # solutions, (2) you retain this notice, and (3) you provide clear
 # attribution to UC Berkeley, including a link to http://ai.berkeley.edu.
-# 
+#
 # Attribution Information: The Pacman AI projects were developed at UC Berkeley.
 # The core projects and autograders were primarily created by John DeNero
 # (denero@cs.berkeley.edu) and Dan Klein (klein@cs.berkeley.edu).
@@ -13,20 +13,18 @@
 
 
 from captureAgents import CaptureAgent
-from capture import GameState as cpt
 import random, time, util
 from game import Directions
 import game
-from util import nearestPoint
-
+from capture import GameState
 
 #################
 # Team creation #
 #################
 
 def createTeam(firstIndex, secondIndex, isRed,
-               first='DummyAgent', second='DummyAgent'):
-    """
+               first = 'DummyAgent', second = 'DummyAgent'):
+  """
   This function should return a list of two agents that will form the
   team, initialized using firstIndex and secondIndex as their agent
   index numbers.  isRed is True if the red team is being created, and
@@ -41,23 +39,22 @@ def createTeam(firstIndex, secondIndex, isRed,
   behavior is what you want for the nightly contest.
   """
 
-    # The following line is an example only; feel free to change it.
-    return [eval(first)(firstIndex), eval(second)(secondIndex)]
-
+  # The following line is an example only; feel free to change it.
+  return [eval(first)(firstIndex), eval(second)(secondIndex)]
 
 ##########
 # Agents #
 ##########
 
 class DummyAgent(CaptureAgent):
-    """
+  """
   A Dummy agent to serve as an example of the necessary agent structure.
   You should look at baselineTeam.py for more details about how to
   create an agent as this is the bare minimum.
   """
 
-    def registerInitialState(self, gameState):
-        """
+  def registerInitialState(self, gameState):
+    """
     This method handles the initial setup of the
     agent to populate useful fields (such as what team
     we're on).
@@ -69,47 +66,56 @@ class DummyAgent(CaptureAgent):
     IMPORTANT: This method may run for at most 15 seconds.
     """
 
-        '''
+    '''
     Make sure you do not delete the following line. If you would like to
     use Manhattan distances instead of maze distances in order to save
     on initialization time, please take a look at
     CaptureAgent.registerInitialState in captureAgents.py.
     '''
-        CaptureAgent.registerInitialState(self, gameState)
+    CaptureAgent.registerInitialState(self, gameState)
 
-        '''
+    '''
     Your initialization code goes here, if you need any.
     '''
 
-    def chooseAction(self, gameState):
-        """
+  def chooseAction(self, gameState):
+    """
     Picks among actions randomly.
     """
-        actions = gameState.getLegalActions(self.index)
-        best_action = actions[0]
-        best_score = -9999999999999
-        for action in actions:
-            clone = self.getSuccessor(gameState, action)
-            score = self.min_play(clone)
-            if (score > best_score):
-              best_action = action
+    actions = gameState.getLegalActions(self.index)
+    '''
+    You should change this in your own agent.
+    '''
+    return self.maximizer(state=gameState, depth=0, alpha=-9999, beta=9999)
+
+  def maximizer(self, state, depth, alpha, beta):
+      if state.getScore() != 0 or state.isOver():
+          return state.getScore()
+      actions = state.getLegalActions(self.index)
+      best_score = -9999
+      score = best_score
+      best_action = Directions.STOP
+      for action in actions:
+          score = self.minimizer(state.generateSuccessor(agentIndex=self.index, action=action), depth + 1, alpha=alpha, beta=beta)
+          if score > best_score:
               best_score = score
-        return best_action
+              best_action = action
+          alpha = max(alpha, best_score)
+          if alpha > beta:
+              return best_score
+      return best_action if depth == 0 else best_score
 
-    def min_play(self, gameState):
-      
-      actions = gameState.getLegalActions(self.index)
-
-
-
-    def getSuccessor(self, gameState, action):
-        """
-    Finds the next successor which is a grid position (location tuple).
-    """
-        successor = gameState.generateSuccessor(self.index, action)
-        pos = successor.getAgentState(self.index).getPosition()
-        if pos != nearestPoint(pos):
-            # Only half a grid position was covered
-            return successor.generateSuccessor(self.index, action)
-        else:
-            return successor
+  def minimizer(self, state, depth, alpha, beta):
+      if state.getScore() != 0 or state.isOver():
+          return state.getScore()
+      actions = state.getLegalActions(self.index)
+      best_score = 9999
+      score = best_score
+      for action in actions:
+          score = self.maximizer(state.generateSuccessor(agentIndex=self.index, action=action), depth + 1, alpha=alpha, beta=beta)
+          if score < best_score:
+              best_score = score
+          beta = min(beta, best_score)
+          if alpha > beta:
+              return best_score
+      return best_score
